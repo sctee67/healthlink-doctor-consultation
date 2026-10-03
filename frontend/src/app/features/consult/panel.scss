@@ -1,0 +1,87 @@
+// Shared panel chrome for the two dashboard columns.
+
+.panel {
+  background: var(--hl-surface);
+  border: 1px solid var(--hl-line);
+  border-radius: var(--hl-radius-lg);
+  box-shadow: var(--hl-shadow);
+  padding: 20px;
+  min-width: 0;
+}
+
+.panel-head {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 16px;
+
+  h2 {
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  p {
+    color: var(--hl-muted);
+    font-size: 12.5px;
+    margin-top: 2px;
+  }
+}
+
+.panel-icon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--hl-primary-soft);
+  color: var(--hl-primary);
+  flex: none;
+}
+
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+  padding: 36px 16px;
+
+  h3 {
+    font-size: 15px;
+    font-weight: 600;
+    margin-top: 6px;
+  }
+
+  p {
+    color: var(--hl-muted);
+    font-size: 13px;
+    max-width: 280px;
+  }
+
+  .hl-btn {
+    margin-top: 10px;
+  }
+}
+
+.state-icon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--hl-surface-2);
+  color: var(--hl-subtle);
+
+  &--error {
+    background: var(--hl-danger-soft);
+    color: var(--hl-danger);
+  }
+}
+
+@media (max-width: 600px) {
+  .panel {
+    padding: 16px;
+    border-radius: var(--hl-radius);
+  }
+}

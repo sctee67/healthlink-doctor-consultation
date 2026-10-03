@@ -1,0 +1,123 @@
+<section class="panel" aria-labelledby="doctors-title">
+  <header class="panel-head">
+    <span class="panel-icon"><hl-icon name="users" [size]="20" /></span>
+    <div>
+      <h2 id="doctors-title">Available Doctors</h2>
+      <p>Find the right doctor for your needs. All doctors are available for online consultations.</p>
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <label class="search">
+      <hl-icon name="search" [size]="16" />
+      <span class="sr-only">Search doctors</span>
+      <input
+        type="search"
+        placeholder="Search by name, specialty or language"
+        [value]="query()"
+        (input)="onSearch($event)"
+        autocomplete="off"
+      />
+    </label>
+
+    @if (specialties().length > 1) {
+      <div class="chips" role="group" aria-label="Filter by specialty">
+        <button type="button" class="chip" [class.on]="!specialty()" [attr.aria-pressed]="!specialty()" (click)="specialty.set(null)">
+          All
+        </button>
+        @for (s of specialties(); track s) {
+          <button
+            type="button"
+            class="chip"
+            [class.on]="specialty() === s"
+            [attr.aria-pressed]="specialty() === s"
+            (click)="specialty.set(specialty() === s ? null : s)"
+          >
+            {{ s }}
+          </button>
+        }
+      </div>
+    }
+  </div>
+
+  @switch (store.doctorsState()) {
+    @case ('loading') {
+      <ul class="list" aria-busy="true" aria-label="Loading doctors">
+        @for (i of [0, 1, 2]; track i) {
+          <li class="card card--skeleton">
+            <span class="hl-skeleton sk-avatar"></span>
+            <span class="sk-lines">
+              <span class="hl-skeleton" style="width: 45%"></span>
+              <span class="hl-skeleton" style="width: 30%"></span>
+              <span class="hl-skeleton" style="width: 22%"></span>
+            </span>
+          </li>
+        }
+      </ul>
+    }
+    @case ('error') {
+      <div class="state">
+        <span class="state-icon state-icon--error"><hl-icon name="alert" [size]="24" /></span>
+        <h3>We couldn't load doctors</h3>
+        <p>Please check your connection and try again.</p>
+        <button type="button" class="hl-btn hl-btn--ghost" (click)="store.loadDoctors()">
+          <hl-icon name="refresh" [size]="16" /> Try again
+        </button>
+      </div>
+    }
+    @default {
+      @if (filtered().length) {
+        <ul class="list">
+          @for (d of filtered(); track d.id; let i = $index) {
+            <li
+              class="card hl-rise"
+              [style.--i]="i"
+              [class.selected]="store.bookingDoctor()?.id === d.id"
+              [class.dim]="d.availability.status === 'unavailable'"
+            >
+              <hl-avatar [name]="d.name" [src]="d.avatarUrl" [size]="56" [online]="d.availability.status === 'available_now'" />
+
+              <div class="info">
+                <h3>{{ d.name }}</h3>
+                <p class="specialty"><hl-icon name="stethoscope" [size]="14" /> {{ d.specialty }}</p>
+                <p class="avail" [attr.data-status]="d.availability.status">
+                  <i aria-hidden="true"></i>{{ availabilityLabel(d) }}
+                </p>
+                <p class="meta">
+                  <span title="Patient rating"><hl-icon name="star" [size]="13" /> {{ d.rating.toFixed(1) }}</span>
+                  <span>{{ d.yearsOfExperience }} yrs exp</span>
+                  <span title="Consultation fee">RM {{ d.feeMyr }}</span>
+                  <span class="types">
+                    @for (t of d.consultationTypes; track t) {
+                      <hl-icon [name]="t" [size]="14" [attr.title]="t === 'chat' ? 'Chat' : 'Video call'" />
+                    }
+                  </span>
+                </p>
+              </div>
+
+              <button
+                type="button"
+                class="hl-btn book"
+                [disabled]="d.availability.status === 'unavailable'"
+                (click)="store.openBooking(d)"
+                [attr.aria-label]="'Book consultation with ' + d.name"
+              >
+                <hl-icon name="calendar" [size]="15" />
+                <span>Book Consultation</span>
+              </button>
+            </li>
+          }
+        </ul>
+      } @else {
+        <div class="state hl-fade-in">
+          <span class="state-icon"><hl-icon name="search" [size]="24" /></span>
+          <h3>No doctors match</h3>
+          <p>Try a different name or specialty.</p>
+          @if (isFiltering()) {
+            <button type="button" class="hl-btn hl-btn--ghost" (click)="clearFilters()">Clear filters</button>
+          }
+        </div>
+      }
+    }
+  }
+</section>

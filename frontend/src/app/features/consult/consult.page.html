@@ -1,0 +1,41 @@
+<section class="hero">
+  <div class="hero-inner">
+    <div class="hero-copy hl-rise">
+      <span class="hero-icon"><hl-icon name="stethoscope" [size]="30" /></span>
+      <div>
+        <p class="eyebrow">Welcome to HealthLink</p>
+        <h1>Consult a Doctor</h1>
+        <p class="lead">Chat or video call with a licensed doctor, 9am–10pm daily.</p>
+        <ul class="perks">
+          <li><hl-icon name="check" [size]="14" [stroke]="2.6" /> Licensed doctors</li>
+          <li><hl-icon name="chat" [size]="14" /> Chat or video</li>
+          <li><hl-icon name="lock" [size]="14" /> Private &amp; secure</li>
+        </ul>
+      </div>
+    </div>
+
+    @if (next(); as n) {
+      <button type="button" class="next hl-rise" style="--i: 2" (click)="scrollToConsultations()" [attr.aria-label]="'Next consultation: ' + n.doctor.name + ', ' + n.when">
+        <span class="next-label">Your next consultation</span>
+        <span class="next-row">
+          <span class="next-icon"><hl-icon [name]="n.type" [size]="18" /></span>
+          <span class="next-text">
+            <strong>{{ n.doctor.name }}</strong>
+            <small>{{ n.when }}</small>
+          </span>
+        </span>
+      </button>
+    }
+  </div>
+</section>
+
+<main class="grid">
+  <hl-doctor-list />
+  <hl-consultation-list (browseDoctors)="scrollToDoctors()" />
+</main>
+
+@if (store.bookingDoctor(); as doctor) {
+  <div class="drawer-host" animate.leave="drawer-leaving">
+    <hl-booking-drawer [doctor]="doctor" (closed)="store.closeBooking()" />
+  </div>
+}

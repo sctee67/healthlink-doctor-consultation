@@ -1,0 +1,196 @@
+:host {
+  display: block;
+  padding-bottom: 48px;
+}
+
+.hero {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 85% -20%, rgb(20 184 166 / 0.18), transparent 45%),
+    radial-gradient(circle at 10% 120%, rgb(11 94 215 / 0.12), transparent 45%),
+    linear-gradient(180deg, #eaf3fe, #f3f8fe);
+  border-bottom: 1px solid var(--hl-line);
+}
+
+.hero-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 28px 24px 30px;
+}
+
+.hero-copy {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+}
+
+.hero-icon {
+  display: grid;
+  place-items: center;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: var(--hl-surface);
+  color: var(--hl-accent);
+  box-shadow: 0 6px 20px rgb(14 165 164 / 0.18);
+  flex: none;
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes float {
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+.eyebrow {
+  color: var(--hl-accent);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+h1 {
+  font-size: clamp(24px, 3.2vw, 32px);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+  margin: 2px 0 4px;
+}
+
+.lead {
+  color: var(--hl-ink-2);
+  font-size: 13.5px;
+}
+
+.perks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  list-style: none;
+  padding: 0;
+  margin: 12px 0 0;
+
+  li {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--hl-ink-2);
+    font-size: 12.5px;
+    font-weight: 500;
+  }
+  hl-icon {
+    color: var(--hl-primary);
+  }
+}
+
+.next {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 260px;
+  padding: 14px 16px;
+  border: 1px solid rgb(255 255 255 / 0.7);
+  border-radius: var(--hl-radius-lg);
+  background: rgb(255 255 255 / 0.75);
+  backdrop-filter: blur(8px);
+  box-shadow: var(--hl-shadow);
+  text-align: left;
+  transition: transform var(--hl-base) var(--hl-ease), box-shadow var(--hl-base) var(--hl-ease);
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--hl-shadow-lg);
+  }
+}
+
+.next-label {
+  color: var(--hl-muted);
+  font-size: 11.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.next-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.next-icon {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: var(--hl-scheduled-soft);
+  color: var(--hl-scheduled);
+}
+
+.next-text {
+  display: flex;
+  flex-direction: column;
+  strong {
+    font-size: 14px;
+  }
+  small {
+    color: var(--hl-ink-2);
+    font-size: 12.5px;
+  }
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 24px 24px 0;
+
+  > * {
+    scroll-margin-top: calc(var(--hl-header-h) + 16px);
+  }
+}
+
+// Kept mounted by `animate.leave` until this (invisible) animation ends,
+// while the drawer's own :host-context(.drawer-leaving) rules play the exit.
+.drawer-host.drawer-leaving {
+  animation: hold var(--hl-base) linear both;
+}
+
+@keyframes hold {
+  to {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 960px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .hero-inner {
+    padding: 20px 16px 22px;
+  }
+  .hero-icon {
+    width: 48px;
+    height: 48px;
+  }
+  .next {
+    width: 100%;
+    min-width: 0;
+  }
+  .grid {
+    padding: 16px 16px 0;
+    gap: 16px;
+  }
+}

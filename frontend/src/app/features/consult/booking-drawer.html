@@ -1,0 +1,229 @@
+<div class="backdrop" (click)="close()" aria-hidden="true"></div>
+
+<aside
+  #panel
+  class="panel"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="booking-title"
+  aria-describedby="booking-subtitle"
+>
+  <header class="head">
+    <span class="grab" aria-hidden="true"></span>
+    <div>
+      <h2 id="booking-title">{{ phase() === 'success' ? 'Booking confirmed' : 'Book Consultation' }}</h2>
+      <p id="booking-subtitle">Schedule a consultation with {{ doctor().name }}</p>
+    </div>
+    <button type="button" class="hl-icon-btn" (click)="close()" aria-label="Close booking panel" [disabled]="phase() === 'submitting'">
+      <hl-icon name="x" [size]="20" />
+    </button>
+  </header>
+
+  @if (phase() !== 'success') {
+    <form class="body" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <div class="scroll">
+        <!-- Doctor summary -->
+        <div class="doc">
+          <hl-avatar [name]="doctor().name" [src]="doctor().avatarUrl" [size]="56" [online]="doctor().availability.status === 'available_now'" />
+          <div class="doc-info">
+            <strong>{{ doctor().name }}</strong>
+            <span class="muted"><hl-icon name="stethoscope" [size]="14" /> {{ doctor().specialty }}</span>
+            <span class="doc-meta">
+              @if (doctor().availability.status === 'available_now') {
+                <span class="ok"><i></i>Available now</span>
+              } @else {
+                <span class="muted"><hl-icon name="clock" [size]="13" /> {{ hoursLabel() }}</span>
+              }
+              <span class="muted"><hl-icon name="wallet" [size]="13" /> RM {{ doctor().feeMyr }}</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- Step 1: type -->
+        <fieldset class="step">
+          <legend>
+            <span class="num" [class.done]="stepDone().type">
+              @if (stepDone().type) { <hl-icon class="hl-pop-in" name="check" [size]="13" [stroke]="3" /> } @else { 1 }
+            </span>
+            Consultation Type
+          </legend>
+          <div class="types">
+            @for (t of typeOptions; track t) {
+              <label class="type" [class.off]="!isOffered(t)">
+                <input
+                  type="radio"
+                  name="type"
+                  [value]="t"
+                  [checked]="value().type === t"
+                  [disabled]="!isOffered(t)"
+                  (change)="pickType(t)"
+                  [attr.data-autofocus]="value().type === t ? '' : null"
+                />
+                <span class="type-card">
+                  <span class="type-top">
+                    <span class="type-icon"><hl-icon [name]="t" [size]="18" /></span>
+                    <span class="radio" aria-hidden="true"><hl-icon name="check" [size]="12" [stroke]="3.2" /></span>
+                  </span>
+                  <strong>{{ t === 'chat' ? 'Chat' : 'Video Call' }}</strong>
+                  <small>
+                    @if (!isOffered(t)) {
+                      Not offered by this doctor
+                    } @else if (t === 'chat') {
+                      Text-based consultation (usually faster)
+                    } @else {
+                      Face-to-face consultation (via video)
+                    }
+                  </small>
+                </span>
+              </label>
+            }
+          </div>
+        </fieldset>
+
+        <!-- Step 2: time -->
+        <fieldset class="step" id="time-step" tabindex="-1">
+          <legend>
+            <span class="num" [class.done]="stepDone().time">
+              @if (stepDone().time) { <hl-icon class="hl-pop-in" name="check" [size]="13" [stroke]="3" /> } @else { 2 }
+            </span>
+            Preferred Time
+          </legend>
+
+          <div class="days" role="radiogroup" aria-label="Choose a day">
+            @for (d of days(); track d.date) {
+              <button
+                type="button"
+                class="day"
+                role="radio"
+                [attr.aria-checked]="d.date === date()"
+                [class.on]="d.date === date()"
+                [disabled]="!d.works"
+                [attr.title]="d.works ? null : 'Doctor is off on this day'"
+                (click)="selectDate(d.date)"
+              >
+                <span>{{ d.top }}</span>
+                <strong>{{ d.bottom }}</strong>
+              </button>
+            }
+          </div>
+
+          <div class="slots" [class.loading]="slots.isLoading()" aria-live="polite">
+            @if (slots.isLoading() && !slots.value().length) {
+              <div class="slot-grid">
+                @for (i of [0, 1, 2, 3, 4, 5, 6, 7]; track i) {
+                  <span class="hl-skeleton sk-slot"></span>
+                }
+              </div>
+            } @else if (slots.error()) {
+              <div class="inline-msg inline-msg--error">
+                <hl-icon name="alert" [size]="16" />
+                <span>Couldn't load times.</span>
+                <button type="button" class="link" (click)="slots.reload()">Retry</button>
+              </div>
+            } @else if (!hasFreeSlot()) {
+              <div class="inline-msg">
+                <hl-icon name="calendar" [size]="16" />
+                <span>No times left on this day.</span>
+                <button type="button" class="link" (click)="jumpToNextAvailable()">Next day →</button>
+              </div>
+            } @else {
+              @for (g of slotGroups(); track g.label) {
+                <div class="group hl-fade-in">
+                  <span class="group-label"><hl-icon [name]="g.icon" [size]="14" /> {{ g.label }}</span>
+                  <div class="slot-grid">
+                    @for (s of g.slots; track s.startsAt) {
+                      <label class="slot" [class.taken]="!s.available" [attr.title]="s.available ? null : 'Already booked'">
+                        <input type="radio" name="slot" [value]="s.startsAt" [checked]="value().slot === s.startsAt" [disabled]="!s.available" (change)="pickSlot(s.startsAt)" />
+                        <span>{{ formatTime(s.startsAt) }}</span>
+                      </label>
+                    }
+                  </div>
+                </div>
+              }
+            }
+          </div>
+
+          <div class="picked" [class.has]="!!selectedLabel()">
+            <hl-icon name="calendar" [size]="16" />
+            <span>{{ selectedLabel() ?? 'No time selected yet' }}</span>
+          </div>
+
+          @if (slotError()) {
+            <p class="err hl-fade-in" role="alert"><hl-icon name="alert" [size]="14" /> {{ slotError() }}</p>
+          } @else if (showError('slot')) {
+            <p class="err hl-fade-in" role="alert"><hl-icon name="alert" [size]="14" /> Please choose a time slot.</p>
+          } @else {
+            <p class="hint"><hl-icon name="info" [size]="14" /> Please select a time within the doctor's available hours. Times are in Malaysia time (GMT+8).</p>
+          }
+        </fieldset>
+
+        <!-- Step 3: reason -->
+        <fieldset class="step">
+          <legend>
+            <span class="num" [class.done]="stepDone().reason">
+              @if (stepDone().reason) { <hl-icon class="hl-pop-in" name="check" [size]="13" [stroke]="3" /> } @else { 3 }
+            </span>
+            <label for="reason-input">Reason for Visit</label>
+          </legend>
+          <textarea
+            id="reason-input"
+            formControlName="reason"
+            rows="4"
+            [attr.maxlength]="reasonMax"
+            placeholder="e.g. Fever and sore throat for 2 days…"
+            [class.invalid]="showError('reason')"
+            [attr.aria-invalid]="showError('reason')"
+            aria-describedby="reason-help"
+          ></textarea>
+          <div class="under" id="reason-help">
+            @if (showError('reason')) {
+              <span class="err hl-fade-in" role="alert"><hl-icon name="alert" [size]="14" /> {{ reasonError() }}</span>
+            } @else {
+              <span class="muted">Symptoms, how long, any medication you're taking.</span>
+            }
+            <span class="count" [class.near]="reasonLength() > reasonMax * 0.9">{{ reasonLength() }}/{{ reasonMax }}</span>
+          </div>
+        </fieldset>
+      </div>
+
+      <footer class="foot">
+        @if (formError()) {
+          <div class="inline-msg inline-msg--error hl-fade-in" role="alert">
+            <hl-icon name="alert" [size]="16" />
+            <span>{{ formError() }}</span>
+          </div>
+        }
+        <button type="submit" class="hl-btn hl-btn--lg hl-btn--block confirm" [disabled]="phase() === 'submitting'">
+          @if (phase() === 'submitting') {
+            <span class="hl-spinner"></span> Booking…
+          } @else {
+            <hl-icon name="calendar-check" [size]="18" /> Confirm Booking
+          }
+        </button>
+        <p class="secure"><hl-icon name="lock" [size]="13" /> Your information is secure and confidential.</p>
+      </footer>
+    </form>
+  } @else {
+    @let c = created()!;
+    <div class="body success">
+      <div class="scroll success-scroll">
+        <svg class="tick" viewBox="0 0 80 80" aria-hidden="true">
+          <circle class="tick-ring" cx="40" cy="40" r="36" />
+          <path class="tick-mark" d="M24 41.5 35 52l22-24" />
+        </svg>
+        <h3 class="hl-rise" style="--i: 3">You're all set!</h3>
+        <p class="muted hl-rise" style="--i: 4">Your consultation has been added to My Consultations.</p>
+
+        <dl class="receipt hl-rise" style="--i: 5">
+          <div><dt>Doctor</dt><dd>{{ c.doctor.name }}</dd></div>
+          <div><dt>Type</dt><dd class="cap"><hl-icon [name]="c.type" [size]="14" /> {{ c.type === 'video' ? 'Video call' : 'Chat' }}</dd></div>
+          <div><dt>When</dt><dd>{{ formatDateTime(c.scheduledAt) }} · {{ c.durationMinutes }} min</dd></div>
+          <div><dt>Reference</dt><dd class="ref">{{ c.id }}</dd></div>
+        </dl>
+      </div>
+      <footer class="foot">
+        <button type="button" class="hl-btn hl-btn--lg hl-btn--block" data-success-focus (click)="close()">Done</button>
+      </footer>
+    </div>
+  }
+</aside>

@@ -1,0 +1,160 @@
+<section class="panel" aria-labelledby="consults-title">
+  <header class="panel-head">
+    <span class="panel-icon"><hl-icon name="calendar" [size]="20" /></span>
+    <div>
+      <h2 id="consults-title">My Consultations</h2>
+      <p>View your upcoming and past consultations.</p>
+    </div>
+  </header>
+
+  <div class="tabs" role="tablist" aria-label="Consultation timeline" [attr.data-active]="tab()">
+    <span class="indicator" aria-hidden="true"></span>
+    <button
+      type="button"
+      role="tab"
+      id="tab-upcoming"
+      aria-controls="consult-tabpanel"
+      [attr.aria-selected]="tab() === 'upcoming'"
+      (click)="selectTab('upcoming')"
+    >
+      Upcoming <span class="count">{{ store.upcoming().length }}</span>
+    </button>
+    <button
+      type="button"
+      role="tab"
+      id="tab-past"
+      aria-controls="consult-tabpanel"
+      [attr.aria-selected]="tab() === 'past'"
+      (click)="selectTab('past')"
+    >
+      Past <span class="count">{{ store.past().length }}</span>
+    </button>
+  </div>
+
+  <div id="consult-tabpanel" role="tabpanel" [attr.aria-labelledby]="'tab-' + tab()">
+    @switch (store.consultationsState()) {
+      @case ('loading') {
+        <ul class="list" aria-busy="true" aria-label="Loading consultations">
+          @for (i of [0, 1, 2]; track i) {
+            <li class="row row--skeleton">
+              <span class="hl-skeleton sk-badge"></span>
+              <span class="sk-lines">
+                <span class="hl-skeleton" style="width: 55%"></span>
+                <span class="hl-skeleton" style="width: 40%"></span>
+              </span>
+            </li>
+          }
+        </ul>
+      }
+      @case ('error') {
+        <div class="state">
+          <span class="state-icon state-icon--error"><hl-icon name="alert" [size]="24" /></span>
+          <h3>We couldn't load your consultations</h3>
+          <button type="button" class="hl-btn hl-btn--ghost" (click)="store.loadConsultations()">
+            <hl-icon name="refresh" [size]="16" /> Try again
+          </button>
+        </div>
+      }
+      @default {
+        <ul class="list">
+          @for (c of items(); track c.id; let i = $index) {
+            <li
+              class="row hl-rise"
+              [style.--i]="i"
+              [class.open]="expandedId() === c.id"
+              [class.flash]="store.highlightId() === c.id"
+              [attr.data-status]="c.status"
+            >
+              <button
+                type="button"
+                class="summary"
+                [attr.aria-expanded]="expandedId() === c.id"
+                [attr.aria-controls]="'details-' + c.id"
+                (click)="toggle(c.id)"
+              >
+                <span class="type-badge" [attr.data-type]="c.type">
+                  <hl-icon [name]="c.type" [size]="18" />
+                </span>
+                <span class="main">
+                  <span class="line1">
+                    <strong>{{ c.doctor.name }}</strong>
+                    <span class="status" [attr.data-status]="c.status">{{ c.status }}</span>
+                  </span>
+                  <span class="sub">{{ c.doctor.specialty }} · {{ typeLabel(c) }}</span>
+                  <span class="when"><hl-icon name="calendar" [size]="13" /> {{ when(c) }}</span>
+                </span>
+                <hl-icon class="chev" name="chevron-right" [size]="18" />
+              </button>
+
+              <div class="details" [id]="'details-' + c.id" [attr.inert]="expandedId() === c.id ? null : ''">
+                <div class="details-inner">
+                  <dl>
+                    <div>
+                      <dt>Reason for visit</dt>
+                      <dd>{{ c.reason }}</dd>
+                    </div>
+                    <div class="grid">
+                      <div>
+                        <dt>Duration</dt>
+                        <dd>{{ c.durationMinutes }} min</dd>
+                      </div>
+                      <div>
+                        <dt>Booked</dt>
+                        <dd>{{ bookedOn(c) }}</dd>
+                      </div>
+                    </div>
+                    <div>
+                      <dt>Reference</dt>
+                      <dd class="ref">{{ c.id }}</dd>
+                    </div>
+                  </dl>
+
+                  @if (c.status === 'scheduled') {
+                    @if (confirmingId() === c.id) {
+                      <div class="confirm hl-fade-in" role="alert">
+                        <p>Cancel this consultation? The slot will be released to other patients.</p>
+                        <div class="actions">
+                          <button type="button" class="hl-btn hl-btn--ghost" (click)="confirmingId.set(null)">Keep it</button>
+                          <button
+                            type="button"
+                            class="hl-btn hl-btn--danger"
+                            [disabled]="store.cancellingId() === c.id"
+                            (click)="confirmCancel(c)"
+                          >
+                            @if (store.cancellingId() === c.id) {
+                              <span class="hl-spinner"></span> Cancelling…
+                            } @else {
+                              Yes, cancel
+                            }
+                          </button>
+                        </div>
+                      </div>
+                    } @else {
+                      <div class="actions">
+                        <button type="button" class="hl-btn hl-btn--ghost cancel" (click)="confirmingId.set(c.id)">
+                          <hl-icon name="ban" [size]="15" /> Cancel consultation
+                        </button>
+                      </div>
+                    }
+                  }
+                </div>
+              </div>
+            </li>
+          } @empty {
+            <li class="state hl-fade-in">
+              <span class="state-icon"><hl-icon [name]="tab() === 'upcoming' ? 'calendar-check' : 'inbox'" [size]="24" /></span>
+              @if (tab() === 'upcoming') {
+                <h3>No upcoming consultations</h3>
+                <p>Pick a doctor to book a chat or video consultation.</p>
+                <button type="button" class="hl-btn" (click)="browseDoctors.emit()">Find a doctor</button>
+              } @else {
+                <h3>No past consultations yet</h3>
+                <p>Completed and cancelled consultations will appear here.</p>
+              }
+            </li>
+          }
+        </ul>
+      }
+    }
+  </div>
+</section>
